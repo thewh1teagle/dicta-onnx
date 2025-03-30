@@ -1,21 +1,41 @@
 import onnxruntime as ort
 import numpy as np
+from transformers import AutoModel, AutoTokenizer
 
-# Load dummy input from .npz
-data = np.load("dummy_input.npz")
-inputs = {k: data[k] for k in data.files}
-print(inputs)
+# Load tokenizer and model
+tokenizer = AutoTokenizer.from_pretrained('dicta-il/dictabert-large-char-menaked')
+model = AutoModel.from_pretrained('dicta-il/dictabert-large-char-menaked', trust_remote_code=True)
 
-# Load the ONNX model
-session = ort.InferenceSession("model.onnx")
+model.eval()
+
+# Prepare input for tokenization
+sentence = 'שלום וברכה'
+dummy_input = tokenizer(sentence, return_tensors='pt', padding=True, truncation=True)
+
+# Load ONNX model
+onnx_model = ort.InferenceSession("model.onnx")
+
+# Prepare the tokenized input in NumPy format for inference
+onnx_inputs = {
+    "input_ids": dummy_input['input_ids'].numpy(),
+    "token_type_ids": dummy_input['token_type_ids'].numpy(),
+    "attention_mask": dummy_input['attention_mask'].numpy(),
+}
 
 # Run inference
-outputs = session.run(None, inputs)
+outputs = onnx_model.run(["nikud_logits", "shin_logits"], onnx_inputs)
 
-# Unpack results
+# Process output
 nikud_logits, shin_logits = outputs
 
-# Print shapes
-print("nikud_logits shape:", nikud_logits.shape)  # Expected: (1, seq_len, 29)
-print("shin_logits shape:", shin_logits.shape)    # Expected: (1, seq_len, 2)
-print(nikud_logits, shin_logits)
+# Convert logits to predicted labels (indices of highest probability)
+nikud_predictions = np.argmax(nikud_logits, axis=-1)
+shin_predictions = np.argmax(shin_logits, axis=-1)
+
+# Map predictions back to corresponding tokens in the vocabulary (optional)
+nikud_tokens = tokenizer.convert_ids_to_tokens(nikud_predictions[0])
+shin_tokens = tokenizer.convert_ids_to_tokens(shin_predictions[0])
+
+# Print the results
+print("Nikud Predictions:", nikud_tokens)
+print("Shin Predictions:", shin_tokens)
