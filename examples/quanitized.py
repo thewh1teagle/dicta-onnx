@@ -1,8 +1,8 @@
 """
 pip install -U dicta-onnx
 
-wget _
-python simple.py
+wget https://github.com/thewh1teagle/dicta-onnx/releases/model-files-v1.0/dicta-1.0.int8.onnx
+python quantized.py
 """
 from dicta_onnx import Dicta
 

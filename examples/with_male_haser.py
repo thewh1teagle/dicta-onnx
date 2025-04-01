@@ -1,3 +1,10 @@
+"""
+pip install -U dicta-onnx
+
+wget https://github.com/thewh1teagle/dicta-onnx/releases/model-files-v1.0/dicta-1.0.onnx
+python with_male_haser.py
+"""
+
 from dicta_onnx import Dicta
 
 dicta = Dicta('./dicta-1.0.onnx')
