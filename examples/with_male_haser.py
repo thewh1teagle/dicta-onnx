@@ -1,7 +1,7 @@
 """
 pip install -U dicta-onnx
 
-wget https://github.com/thewh1teagle/dicta-onnx/releases/model-files-v1.0/dicta-1.0.onnx
+wget https://github.com/thewh1teagle/dicta-onnx/releases/download/model-files-v1.0/dicta-1.0.onnx
 python with_male_haser.py
 """
 
