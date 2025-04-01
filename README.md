@@ -16,4 +16,4 @@ pip install -U dicta-onnx
 2. Download model from _ and put in the directory
 3. Run one of the examples from [examples](examples) folder
 
-Special thanks ❤️ to [Dicta-IL](https://huggingface.co/dicta-il/dictabert-large-char-menaked) for their amazing Hebrew diacritics model! ✨
+Special thanks ❤️ to [dicta-il](https://huggingface.co/dicta-il/dictabert-large-char-menaked) for their amazing Hebrew diacritics model! ✨
