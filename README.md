@@ -4,6 +4,14 @@ Add diacritics to Hebrew text using [Dicta model](https://huggingface.co/dicta-i
 
 See [model card](https://huggingface.co/dicta-il/dictabert-large-char-menaked) on HuggingFace 🤗
 
+## Features
+
+- Fast: 0.1s per sentnece (macOS M1) 🚀
+- Batching: Supports multiple sentences at once 📚
+- User friendly: Add diacritics with just 2 lines of code ✨
+- Lightweight: Runs with onnx without heavy dependencies 🛠️
+- Dual mode: Output niqqud male (fully marked) and niqqud haser 💡
+
 ## Install
 
 ```console
