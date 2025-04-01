@@ -1,6 +1,6 @@
 from dicta_onnx import Dicta
 
-dicta = Dicta('./model.onnx')
+dicta = Dicta('./dicta-1.0.onnx')
 sentence = 'בשנת 1948 השלים אפרים קישון את לימודיו בפיסול מתכת ובתולדות האמנות והחל לפרסם מאמרים הומוריסטיים'
 with_diacritics = dicta.add_diacritics(sentence, '|')
 male = dicta.get_niqqud_male(with_diacritics, '|')
