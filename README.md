@@ -21,7 +21,7 @@ pip install -U dicta-onnx
 ## Usage
 
 1. Install the library
-2. Download model from [model-files-v1.0)](https://github.com/thewh1teagle/dicta-onnx/releases/download/model-files-v1.0) and put in the directory
+2. Download model from [model-files-v1.0](https://github.com/thewh1teagle/dicta-onnx/releases/download/model-files-v1.0) and put in the directory
 3. Run one of the examples from [examples](examples) folder
 
 Special thanks ❤️ to [dicta-il](https://huggingface.co/dicta-il/dictabert-large-char-menaked) for their amazing Hebrew diacritics model! ✨
