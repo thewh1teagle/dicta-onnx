@@ -1,6 +1,6 @@
 [project]
 name = "dicta-onnx"
-version = "1.0.0"
+version = "1.0.1"
 description = "Add diacritics to Hebrew text using Dicta model"
 readme = "README.md"
 authors = [
@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.11"
 dependencies = [
     "onnxruntime>=1.21.0",
+    "torch>=2.6.0",
     "transformers>=4.50.3",
 ]
 [project.urls]
