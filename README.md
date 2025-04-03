@@ -24,4 +24,8 @@ pip install -U dicta-onnx
 2. Download model from [model-files-v1.0](https://github.com/thewh1teagle/dicta-onnx/releases/model-files-v1.0) and put in the directory
 3. Run one of the examples from [examples](examples) folder
 
+## Play
+
+You can play with dicta-onnx in this [HuggingFace Space](https://huggingface.co/spaces/thewh1teagle/add-diacritics-in-hebrew)
+
 Special thanks ❤️ to [dicta-il](https://huggingface.co/dicta-il/dictabert-large-char-menaked) for their amazing Hebrew diacritics model! ✨
