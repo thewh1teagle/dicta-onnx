@@ -28,4 +28,6 @@ pip install -U dicta-onnx
 
 You can play with dicta-onnx in this [HuggingFace Space](https://huggingface.co/spaces/thewh1teagle/add-diacritics-in-hebrew)
 
+## Credits
+
 Special thanks ❤️ to [dicta-il](https://huggingface.co/dicta-il/dictabert-large-char-menaked) for their amazing Hebrew diacritics model! ✨
