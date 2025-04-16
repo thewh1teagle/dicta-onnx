@@ -32,22 +32,51 @@ class OnnxDiacritizationModel:
         self.input_names = [input.name for input in self.session.get_inputs()]
         self.output_names = [output.name for output in self.session.get_outputs()]
     
-    def predict(self, sentences, mark_matres_lectionis=None, padding='longest'):
-        sentences = [remove_nikkud(sentence) for sentence in sentences]
+    def _create_inputs(self, sentences: list[str], padding: str):
+        # Tokenize inputs using tokenizers library
+        encodings = []
+        for sentence in sentences:
+            encoding = self.tokenizer.encode(sentence)
+            encodings.append(encoding)
         
-        # Tokenize inputs
-        inputs = self.tokenizer(sentences, padding=padding, truncation=True, return_tensors='pt', return_offsets_mapping=True)
-        offset_mapping = inputs.pop('offset_mapping').numpy()
+        # Get the max length for padding
+        max_len = max(len(enc.ids) for enc in encodings) if padding == 'longest' else 0
+        
+        # Prepare batch inputs
+        input_ids = []
+        attention_mask = []
+        offset_mapping = []
+        
+        for encoding in encodings:
+            ids = encoding.ids
+            masks = [1] * len(ids)
+            offsets = encoding.offsets
+            
+            # Pad if needed
+            if padding == 'longest' and len(ids) < max_len:
+                padding_length = max_len - len(ids)
+                ids = ids + [self.tokenizer.token_to_id('[PAD]')] * padding_length
+                masks = masks + [0] * padding_length
+                offsets = offsets + [(0, 0)] * padding_length
+            
+            input_ids.append(ids)
+            attention_mask.append(masks)
+            offset_mapping.append(offsets)
         
         # Convert to numpy arrays for ONNX Runtime
-        onnx_inputs = {
-            'input_ids': inputs['input_ids'].numpy(),
-            'attention_mask': inputs['attention_mask'].numpy(),
-            'token_type_ids': inputs['token_type_ids'].numpy() if 'token_type_ids' in inputs else np.zeros_like(inputs['input_ids'].numpy())
-        }
+        return {
+            'input_ids': np.array(input_ids, dtype=np.int64),
+            'attention_mask': np.array(attention_mask, dtype=np.int64),
+            # Token type IDs might be needed depending on your model
+            'token_type_ids': np.zeros_like(np.array(input_ids, dtype=np.int64))
+        }, offset_mapping
+
+    def predict(self, sentences, mark_matres_lectionis=None, padding='longest'):
+        sentences = [remove_nikkud(sentence) for sentence in sentences]
+        inputs, offset_mapping = self._create_inputs(sentences, padding)
         
         # Run inference
-        outputs = self.session.run(self.output_names, onnx_inputs)
+        outputs = self.session.run(self.output_names, inputs)
         
         # Process outputs based on output names
         if 'nikud_logits' in self.output_names and 'shin_logits' in self.output_names:
