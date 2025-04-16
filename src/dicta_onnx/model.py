@@ -1,7 +1,7 @@
 
 import onnxruntime as ort
 import numpy as np
-from transformers import AutoTokenizer
+from tokenizers import Tokenizer
 import re
 
 # Constants
@@ -25,7 +25,7 @@ def remove_nikkud(text):
 class OnnxDiacritizationModel:
     def __init__(self, model_path, tokenizer_name='dicta-il/dictabert-large-char-menaked'):
         # Load the tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+        self.tokenizer = Tokenizer.from_pretrained(tokenizer_name)
         
         # Create ONNX Runtime session
         self.session = ort.InferenceSession(model_path)
