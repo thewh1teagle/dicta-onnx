@@ -11,6 +11,8 @@ MAT_LECT_TOKEN = '<MAT_LECT>'
 MATRES_LETTERS = list('אוי')
 ALEF_ORD = ord('א')
 TAF_ORD = ord('ת')
+STRESS_CHAR = '\u05ab' # "ole" symbol marks stress
+MOBILE_SHVA_CHAR = '\u05bd' # "meteg" symbol marks shva na (mobile shva)
 
 def is_hebrew_letter(char):
     return ALEF_ORD <= ord(char) <= TAF_ORD
@@ -79,18 +81,20 @@ class OnnxDiacritizationModel:
         outputs = self.session.run(self.output_names, inputs)
         
         # Process outputs based on output names
-        if 'nikud_logits' in self.output_names and 'shin_logits' in self.output_names:
-            nikud_idx = self.output_names.index('nikud_logits')
-            shin_idx = self.output_names.index('shin_logits')
-            nikud_logits = outputs[nikud_idx]
-            shin_logits = outputs[shin_idx]
-        else:
-            # Assume order is maintained as in the export
-            nikud_logits, shin_logits = outputs
+        nikud_idx = self.output_names.index('nikud_logits')
+        shin_idx = self.output_names.index('shin_logits')
+        nikud_logits = outputs[nikud_idx]
+        shin_logits = outputs[shin_idx]
+
+        additional_idx = self.output_names.index('additional_logits')
+        additional_logits = outputs[additional_idx]
+        
         
         # Get predictions
         nikud_predictions = np.argmax(nikud_logits, axis=-1)
         shin_predictions = np.argmax(shin_logits, axis=-1)
+        stress_predictions = (additional_logits[..., 0] > 0).astype(np.int32)
+        mobile_shva_predictions = (additional_logits[..., 1] > 0).astype(np.int32)
         
         ret = []
         for sent_idx, (sentence, sent_offsets) in enumerate(zip(sentences, offset_mapping)):
@@ -124,7 +128,10 @@ class OnnxDiacritizationModel:
                         output.append(char)
                         continue
                 
-                output.append(char + shin + nikud)
+                stress = STRESS_CHAR if stress_predictions is not None and stress_predictions[sent_idx][idx] == 1 else ""
+                mobile_shva = MOBILE_SHVA_CHAR if mobile_shva_predictions is not None and mobile_shva_predictions[sent_idx][idx] == 1 else ""
+
+                output.append(char + shin + nikud + stress + mobile_shva)
             output.append(sentence[prev_index:])
             ret.append(''.join(output))
         

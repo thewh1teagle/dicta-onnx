@@ -14,23 +14,78 @@ uv run scripts/export.py
 
 import torch
 import onnx
-from transformers import AutoModel
 from pathlib import Path
 from onnxruntime.quantization import quantize_dynamic, QuantType
+from argparse import ArgumentParser
+import sys
+from pathlib import Path
+
+def parse_args():
+    parser = ArgumentParser(description="Export and quantize model")
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="dicta-il/dictabert-large-char-menaked",
+        help="Name of the model to export and quantize."
+    )
+    return parser.parse_args()
+
+args = parse_args()
+
+# Add the parent directory of your model to sys.path
+model_dir = Path(args.model).resolve()
+module_path = model_dir.joinpath('../../src').absolute()
+sys.path.append(module_path)
+from model import PhoNikudModel
 
 # Config
 dynamic_axes = True
-dynamic_axes_dict: dict | None = None
+dynamic_axes_dict = None
 batch_size = 1
 sequence_length = 128
 
-model_name = 'dicta-il/dictabert-large-char-menaked'
 int8_model_path = "dicta-1.0.int8.onnx"
-fp32_model_path = 'dicta-1.0.onnx'
+fp32_model_path = "dicta-1.0.onnx"
 
-# Fetch model
-model = AutoModel.from_pretrained(model_name, trust_remote_code=True)
+# Define a model wrapper class for ONNX export
+class ModelForONNX(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+    
+    def forward(self, input_ids, attention_mask, token_type_ids):
+        # Create a dictionary of inputs as expected by the model's forward method
+        inputs = {
+            'input_ids': input_ids,
+            'attention_mask': attention_mask,
+            'token_type_ids': token_type_ids
+        }
+        
+        # Call the model with the inputs dictionary
+        outputs = self.model(inputs)
+        
+        # Extract the three outputs we want to export
+        return (
+            outputs.nikud_logits,
+            outputs.shin_logits,
+            outputs.additional_logits
+        )
+
+# Load your custom model
+print(f"Loading model from: {args.model}")
+
+# Option 1: If your model can be loaded directly from checkpoint
+model = PhoNikudModel.from_pretrained(args.model)
+
+# Option 2: If you need to load from a saved state dict
+# model = PhoNikudModel(config)
+# state_dict = torch.load(os.path.join(args.model, "pytorch_model.bin"))
+# model.load_state_dict(state_dict)
+
 model.eval()
+
+# Wrap the model for ONNX export
+wrapped_model = ModelForONNX(model)
 
 # Create dummy inputs
 dummy_input_ids = torch.ones((batch_size, sequence_length), dtype=torch.long)
@@ -44,43 +99,34 @@ if dynamic_axes:
         'attention_mask': {0: 'batch_size', 1: 'sequence_length'},
         'token_type_ids': {0: 'batch_size', 1: 'sequence_length'},
         'nikud_logits': {0: 'batch_size', 1: 'sequence_length'},
-        'shin_logits': {0: 'batch_size', 1: 'sequence_length'}
+        'shin_logits': {0: 'batch_size', 1: 'sequence_length'},
+        'additional_logits': {0: 'batch_size', 1: 'sequence_length'},
     }
 
 # Create model folder
 Path(fp32_model_path).parent.mkdir(exist_ok=True)
 
-# Define forward pass for onnx export
-def forward_for_onnx(input_ids, attention_mask, token_type_ids):
-    outputs = model(
-        input_ids=input_ids,
-        attention_mask=attention_mask,
-        token_type_ids=token_type_ids,
-        return_dict=True
-    )
-    # Return the logits separately for clear output names
-    return outputs.logits.nikud_logits, outputs.logits.shin_logits
-
-print(f"Exporting onnx model to: {fp32_model_path}...")
+print(f"Exporting ONNX model to: {fp32_model_path}...")
+# Export with the wrapped model
 torch.onnx.export(
-    model,
+    wrapped_model,
     args=(dummy_input_ids, dummy_attention_mask, dummy_token_type_ids),
     f=fp32_model_path,
     input_names=['input_ids', 'attention_mask', 'token_type_ids'],
-    output_names=['nikud_logits', 'shin_logits'],
+    output_names=['nikud_logits', 'shin_logits', 'additional_logits'],
     dynamic_axes=dynamic_axes_dict,
     opset_version=14,
     do_constant_folding=True,
     export_params=True,
     verbose=False
 )
-print("✅ onnx model export completed!")
+print("✅ ONNX model export completed!")
 
 # Verify the exported model
-print("Verifying onnx model integrity...")
+print("Verifying ONNX model integrity...")
 onnx_model = onnx.load(fp32_model_path)
 onnx.checker.check_model(onnx_model)
-print("🎉 onnx model verification successful! Ready to use.")
+print("🎉 ONNX model verification successful! Ready to use.")
 
 # Perform dynamic quantization (INT8)
 print(f"Quantizing model to INT8: {int8_model_path}...")
