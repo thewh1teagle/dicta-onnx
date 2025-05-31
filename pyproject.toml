@@ -1,6 +1,6 @@
 [project]
 name = "dicta-onnx"
-version = "1.0.6"
+version = "1.0.7"
 description = "Add diacritics to Hebrew text using Dicta model"
 readme = "README.md"
 authors = [
